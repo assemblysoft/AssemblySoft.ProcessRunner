@@ -72,7 +72,7 @@ namespace AssemblySoft.ProcessRunner
             if (process == null)
                 return outputBuilder.ToString();
 
-            process.OutputDataReceived += Process_OutputDataReceived;
+            //process.OutputDataReceived += Process_OutputDataReceived;
 
             //while(!process.HasExited)
             //{
