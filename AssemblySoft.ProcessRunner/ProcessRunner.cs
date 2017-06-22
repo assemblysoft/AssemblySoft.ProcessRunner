@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Text;
 
 namespace AssemblySoft.ProcessRunner
@@ -8,9 +9,6 @@ namespace AssemblySoft.ProcessRunner
     /// </summary>
     public class ProcessRunner
     {
-        //public delegate void ProcessRunnerOutputEventHandler(ProcessOutputEventArg e);
-        //public event ProcessRunnerOutputEventHandler ProcessOutput;
-
         /// <summary>
         /// Runs a process given a full file path
         /// </summary>
@@ -57,42 +55,41 @@ namespace AssemblySoft.ProcessRunner
             var outputBuilder = new StringBuilder();
 
             var proc = new Process();
-
             var processInfo = new ProcessStartInfo(string.Format(@"{0}\{1}", processFilePath, processFileName), command)
             {
                 CreateNoWindow = createNoWindow,
                 UseShellExecute = useShellExecute,
                 RedirectStandardOutput = true,
                 RedirectStandardInput = true,
-            };                    
-            
-            var process = Process.Start(processInfo);
+                WindowStyle = ProcessWindowStyle.Hidden,
+            };
+
+            proc.StartInfo = processInfo;
+            proc.OutputDataReceived += Process_OutputDataReceived;
 
 
-            if (process == null)
-                return outputBuilder.ToString();
+            proc.Start();
+            proc.BeginOutputReadLine();
+            proc.WaitForExit();
 
-            //process.OutputDataReceived += Process_OutputDataReceived;
-
-            //while(!process.HasExited)
-            //{
-                
-            //}
-
-            process.WaitForExit();
-
-            var exitCode = process.ExitCode;            
-            process.Close();
+            var exitCode = proc.ExitCode;
+            proc.Close();
 
             return outputBuilder.ToString();
         }
 
-        //private void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
-        //{
-        //    if(ProcessOutput != null)
-        //    {
+        public event EventHandler<ProcessOutputEventArgs> ProcessOutputData;
+        private void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            ProcessOutputData?.Invoke(this, new ProcessOutputEventArgs() { Message = e.Data });
+        }
+    }
 
-        //    }
-        //}
+    /// <summary>
+    /// ProcessOutput Event args 
+    /// </summary>
+    public class ProcessOutputEventArgs : EventArgs
+    {
+        public string Message { get; set; }
     }
 }
